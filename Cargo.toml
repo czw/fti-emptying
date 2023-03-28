@@ -1,0 +1,15 @@
+[package]
+name = "fti-emptying"
+version = "0.1.0"
+authors = ["Jens Bäckman <jens.backman@me.com"]
+edition = "2021"
+description = "Shows when FTI has emptied recycling bins at a site"
+repository = "https://git.kodgruvan.com/czw/fti-emptying"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4.2", features = ["derive"] }
+minidom = "0.15"
+ureq = { version = "2.6", default-features = false, features = ["tls"] }
