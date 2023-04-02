@@ -16,7 +16,7 @@ pub type ContainerDatesMap = HashMap<String, (DateTime<Local>, DateTime<Local>)>
 /// DateTime tuple. The first DateTime signifies when the container was
 /// emptied, the second one tells when it's scheduled to be emptied.
 pub fn fetch_recycling_station_status(id: u32) -> Result<ContainerDatesMap> {
-    const URL: &'static str = "https://ftiws.ftiab.se/fti_ws/fti_ws.asmx?op=GetAVSStatistik";
+    const URL: &str = "https://ftiws.ftiab.se/fti_ws/fti_ws.asmx?op=GetAVSStatistik";
     let envelope = format!(
         r#"<?xml version="1.0" encoding="utf-8"?>
            <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -40,8 +40,8 @@ pub fn fetch_recycling_station_status(id: u32) -> Result<ContainerDatesMap> {
 }
 
 fn extract_scheduled_events(info: String) -> Result<ContainerDatesMap> {
-    const NAMESPACE: &'static str = "http://tempuri.org/";
-    const DATE_FORMAT: &'static str = "%Y-%m-%dT%H:%M:%S";
+    const NAMESPACE: &str = "http://tempuri.org/";
+    const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
     // Figure out where the list of recycling bins is
     let root: Element = info.parse().context("FTI response isn't valid XML")?;
