@@ -1,33 +1,76 @@
 // SPDX-License-Identifier: MIT
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
+use std::time::Duration;
 mod fti;
 mod humanize;
+mod report;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct CLArgs {
     /// Recycling station ID number
     station_id: u32,
+
+    /// Send emptying notifications to the desktop environment
+    #[cfg(feature = "desktop-notifications")]
+    #[arg(long)]
+    notify_desktop: bool,
 }
 
-fn pretty_print(status: fti::ContainerDatesMap) -> Result<()> {
+fn calc_sleep_time(status: &fti::ContainerDatesMap) -> Result<Duration> {
+    // If there's a container being emptied today, check every 15 minutes
     let now = chrono::Local::now();
-    for (container, (emptied, scheduled)) in status {
-        println!(
-            "{}: Emptied {}, next emptying {}",
-            container,
-            humanize::time(now, emptied)?,
-            humanize::days_in_the_future(now, scheduled)
-        );
+    let today = now.date_naive();
+    for (_, emptying) in status.values() {
+        if emptying.date_naive() == today {
+            return Ok(Duration::from_secs(15 * 60));
+        }
     }
-    Ok(())
+
+    // Schedule a check tomorrow at 07:00
+    let tomorrow = today
+        .checked_add_days(chrono::Days::new(1))
+        .context("Can't turn today into tomorrow")?;
+    let morning = chrono::NaiveTime::from_hms_opt(7, 0, 0).context("Can't build the time 07:00")?;
+    let target = tomorrow.and_time(morning);
+    let target = chrono::TimeZone::from_local_datetime(&chrono::Local, &target);
+    let target = target
+        .single()
+        .context("Failed to convert a naive date and time to the local timezone")?;
+    Ok((target - now).to_std()?)
 }
 
 fn main() -> Result<()> {
     let args = CLArgs::parse();
-    let status = fti::fetch_recycling_station_status(args.station_id)?;
-    pretty_print(status)?;
+    let daemon_mode = args.notify_desktop;
+    let mut old_status: Option<fti::ContainerDatesMap> = None;
+    loop {
+        // Check once and report the results if not running in daemon mode.
+        let status = fti::fetch_recycling_station_status(args.station_id)?;
+        if !daemon_mode {
+            report::notify_console(&status)?;
+            break;
+        }
+
+        // Send notifications if there are any messages
+        let messages = report::generate_message_strings(&status, old_status)?;
+        if !messages.is_empty() {
+            println!("{} containers were emptied, notifying", messages.len());
+            if args.notify_desktop {
+                report::notify_desktop(&messages)?;
+            }
+        }
+
+        // Wait for a while until the next check
+        let duration = calc_sleep_time(&status)?;
+        println!(
+            "Waiting for {} seconds until next check",
+            duration.as_secs()
+        );
+        std::thread::sleep(duration);
+        old_status = Some(status);
+    }
     Ok(())
 }

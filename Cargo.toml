@@ -12,4 +12,9 @@ anyhow = "1.0"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4.2", features = ["derive"] }
 minidom = "0.15"
+notify-rust = { version = "4", optional = true }
 ureq = { version = "2.6", default-features = false, features = ["tls"] }
+
+[features]
+default = ["desktop-notifications"]
+desktop-notifications = ["dep:notify-rust"]
