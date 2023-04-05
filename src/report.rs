@@ -9,18 +9,18 @@ use anyhow::Result;
 pub fn generate_message_strings(
     status: &ContainerDatesMap,
     old_status: Option<ContainerDatesMap>,
-) -> Result<Vec<String>> {
+) -> Vec<String> {
     // No old status means no messages
     let mut messages = Vec::new();
     let old_status = old_status.unwrap_or(ContainerDatesMap::new());
     for (container, (emptied, _)) in status {
         if let Some((old_emptied, _)) = old_status.get(container) {
             if emptied != old_emptied {
-                messages.push(format!("{} has just been emptied", container))
+                messages.push(format!("{container} has just been emptied"));
             }
         }
     }
-    Ok(messages)
+    messages
 }
 
 pub fn notify_console(status: &ContainerDatesMap) -> Result<()> {
@@ -53,7 +53,7 @@ mod tests {
     use anyhow::Context;
 
     #[test]
-    fn generate_messages_identical_statuses() -> Result<()> {
+    fn generate_messages_identical_statuses() {
         // With when the old and new status are identical, no messages should
         // be generated.
         let now = chrono::Local::now();
@@ -61,22 +61,20 @@ mod tests {
         status.insert("Plastic".to_string(), (now, now));
         let old_status = Some(status.clone());
 
-        let messages = generate_message_strings(&status, old_status)?;
+        let messages = generate_message_strings(&status, old_status);
         assert_eq!(messages.len(), 0);
-        Ok(())
     }
 
     #[test]
-    fn generate_messages_no_old_status() -> Result<()> {
+    fn generate_messages_no_old_status() {
         // With no old status, no messages should be generated.
         let now = chrono::Local::now();
         let mut status = ContainerDatesMap::new();
         status.insert("Plastic".to_string(), (now, now));
         let old_status: Option<ContainerDatesMap> = None;
 
-        let messages = generate_message_strings(&status, old_status)?;
+        let messages = generate_message_strings(&status, old_status);
         assert_eq!(messages.len(), 0);
-        Ok(())
     }
 
     #[test]
@@ -92,7 +90,7 @@ mod tests {
         old.insert("Plastic".to_string(), (then, then));
         let old_status: Option<ContainerDatesMap> = Some(old);
 
-        let messages = generate_message_strings(&status, old_status)?;
+        let messages = generate_message_strings(&status, old_status);
         assert_eq!(messages.len(), 1);
         Ok(())
     }

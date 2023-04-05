@@ -65,7 +65,7 @@ fn main() -> Result<()> {
         }
 
         // Send notifications if there are any messages
-        let messages = report::generate_message_strings(&status, old_status)?;
+        let messages = report::generate_message_strings(&status, old_status);
         if !messages.is_empty() {
             println!("{} containers were emptied, notifying", messages.len());
 

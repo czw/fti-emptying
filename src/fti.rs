@@ -13,7 +13,7 @@ pub type ContainerDatesMap = HashMap<String, (DateTime<Local>, DateTime<Local>)>
 /// # Return
 ///
 /// A hashmap where the key-value pair is the recycling container name and a
-/// DateTime tuple. The first DateTime signifies when the container was
+/// `DateTime` tuple. The first `DateTime` signifies when the container was
 /// emptied, the second one tells when it's scheduled to be emptied.
 pub fn fetch_recycling_station_status(id: u32) -> Result<ContainerDatesMap> {
     const URL: &str = "https://ftiws.ftiab.se/fti_ws/fti_ws.asmx?op=GetAVSStatistik";
@@ -36,10 +36,10 @@ pub fn fetch_recycling_station_status(id: u32) -> Result<ContainerDatesMap> {
         .context("Could not send request to FTI")?
         .into_string()
         .context("FTI response couldn't be made into a string")?;
-    extract_scheduled_events(text)
+    extract_scheduled_events(&text)
 }
 
-fn extract_scheduled_events(info: String) -> Result<ContainerDatesMap> {
+fn extract_scheduled_events(info: &str) -> Result<ContainerDatesMap> {
     const NAMESPACE: &str = "http://tempuri.org/";
     const DATE_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
 
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_process_recycling_infostr() -> Result<()> {
-        let info = extract_scheduled_events(XML.to_string())?;
+        let info = extract_scheduled_events(XML)?;
         assert_eq!(info.len(), 2); // Only two scheduled events
         Ok(())
     }
