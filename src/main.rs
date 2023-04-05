@@ -42,9 +42,19 @@ fn calc_sleep_time(status: &fti::ContainerDatesMap) -> Result<Duration> {
     Ok((target - now).to_std()?)
 }
 
+#[cfg(feature = "desktop-notifications")]
+fn is_daemon(args: &CLArgs) -> bool {
+    args.notify_desktop
+}
+
+#[cfg(not(feature = "desktop-notifications"))]
+fn is_daemon(_args: &CLArgs) -> bool {
+    false
+}
+
 fn main() -> Result<()> {
     let args = CLArgs::parse();
-    let daemon_mode = args.notify_desktop;
+    let daemon_mode = is_daemon(&args);
     let mut old_status: Option<fti::ContainerDatesMap> = None;
     loop {
         // Check once and report the results if not running in daemon mode.
@@ -58,6 +68,8 @@ fn main() -> Result<()> {
         let messages = report::generate_message_strings(&status, old_status)?;
         if !messages.is_empty() {
             println!("{} containers were emptied, notifying", messages.len());
+
+            #[cfg(feature = "desktop-notifications")]
             if args.notify_desktop {
                 report::notify_desktop(&messages)?;
             }

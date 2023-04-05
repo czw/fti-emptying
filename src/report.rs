@@ -36,6 +36,7 @@ pub fn notify_console(status: &ContainerDatesMap) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "desktop-notifications")]
 pub fn notify_desktop(messages: &Vec<String>) -> Result<()> {
     for message in messages {
         notify_rust::Notification::new()
