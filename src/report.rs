@@ -2,7 +2,7 @@
 
 use crate::fti::ContainerDatesMap;
 use crate::humanize;
-use anyhow::Result;
+use anyhow::{Context, Result};
 
 /// Look at two status updates from FTI and generate messages if any container
 /// has been emptied recently.
@@ -47,10 +47,24 @@ pub fn notify_desktop(messages: &Vec<String>) -> Result<()> {
     Ok(())
 }
 
+pub fn notify_ntfy(
+    messages: &Vec<String>,
+    host: &String,
+    topic: &String,
+    station_id: u32,
+) -> Result<()> {
+    let uri = format!("{host}/{topic}-{station_id}");
+    for message in messages {
+        ureq::post(&uri)
+            .send_string(message)
+            .context("Couldn't send message to ntfy.sh server")?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::Context;
 
     #[test]
     fn generate_messages_identical_statuses() {

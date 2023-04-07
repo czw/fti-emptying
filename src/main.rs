@@ -17,6 +17,15 @@ struct CLArgs {
     #[cfg(feature = "desktop-notifications")]
     #[arg(long)]
     notify_desktop: bool,
+
+    /// Send emptying notifications to a ntfy.sh server
+    #[arg(long, value_name = "HOST")]
+    notify_ntfy_host: Option<String>,
+
+    /// Base topic name to use for ntfy.sh notifications, where the final topic
+    /// will be in the form of <TOPIC>-<STATION_ID>
+    #[arg(long, default_value = "fti-emptying", value_name = "TOPIC")]
+    notify_ntfy_topic: String,
 }
 
 fn calc_sleep_time(status: &fti::ContainerDatesMap) -> Result<Duration> {
@@ -44,12 +53,12 @@ fn calc_sleep_time(status: &fti::ContainerDatesMap) -> Result<Duration> {
 
 #[cfg(feature = "desktop-notifications")]
 fn is_daemon(args: &CLArgs) -> bool {
-    args.notify_desktop
+    args.notify_desktop || args.notify_ntfy_host.is_some()
 }
 
 #[cfg(not(feature = "desktop-notifications"))]
-fn is_daemon(_args: &CLArgs) -> bool {
-    false
+fn is_daemon(args: &CLArgs) -> bool {
+    args.notify_ntfy_host.is_some()
 }
 
 fn main() -> Result<()> {
@@ -72,6 +81,10 @@ fn main() -> Result<()> {
             #[cfg(feature = "desktop-notifications")]
             if args.notify_desktop {
                 report::notify_desktop(&messages)?;
+            }
+
+            if let Some(ref host) = args.notify_ntfy_host {
+                report::notify_ntfy(&messages, host, &args.notify_ntfy_topic, args.station_id)?;
             }
         }
 
