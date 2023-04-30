@@ -5,7 +5,7 @@ FROM rust:slim AS build
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo new --bin fti-emptying
 WORKDIR /fti-emptying
-COPY ./Cargo.* .
+COPY ./Cargo.* ./
 RUN cargo fetch
 RUN cargo build -r -p anyhow
 RUN cargo build -r -p chrono
