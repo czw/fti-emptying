@@ -1,21 +1,20 @@
+FROM rust:slim AS build
+ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+
 # Create an empty shell project and build the depencies listed in the Cargo
 # files. We do this to utilize Docker caching and speed up builds when only
 # the code has been changed.
-FROM rust:slim AS build
-ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
 RUN cargo new --bin fti-emptying
 WORKDIR /fti-emptying
-COPY ./Cargo.* ./
-RUN cargo fetch
-RUN cargo build -r -p anyhow
-RUN cargo build -r -p chrono
-RUN cargo build -r -p clap
-RUN cargo build -r -p minidom
-RUN cargo build -r -p ureq
+COPY ./Cargo.* build.rs ./
+RUN echo "fn main() {}" > src/main.rs
+RUN cargo build --release --no-default-features
 
-# Do a proper release build
-COPY ./src ./src
-RUN cargo build -r --no-default-features
+# Copy the real data, touch our main.rs and do a proper release build
+COPY . .
+RUN touch src/main.rs
+RUN cargo build --release --no-default-features
+RUN strip target/release/fti-emptying
 
 # Build the runtime image
 FROM debian:stable-slim AS deploy

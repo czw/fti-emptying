@@ -6,6 +6,7 @@ edition = "2021"
 description = "Shows when FTI has emptied recycling bins at a site"
 repository = "https://git.kodgruvan.com/czw/fti-emptying"
 license = "MIT"
+build = "build.rs"
 
 [dependencies]
 anyhow = "1.0"
@@ -14,6 +15,11 @@ clap = { version = "4.2", features = ["derive"] }
 minidom = "0.15"
 notify-rust = { version = "4", optional = true }
 ureq = { version = "2.6", default-features = false, features = ["tls"] }
+
+# i18n
+i18n-embed = { version = "0.13", features = ["desktop-requester", "fluent-system"] }
+i18n-embed-fl = "0.6"
+rust-embed = "6"
 
 [features]
 default = ["desktop-notifications"]
