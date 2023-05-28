@@ -5,6 +5,7 @@ use clap::Parser;
 use std::time::Duration;
 mod fti;
 mod humanize;
+mod i18n;
 mod report;
 
 #[derive(Parser)]
@@ -62,6 +63,9 @@ fn is_daemon(args: &CLArgs) -> bool {
 }
 
 fn main() -> Result<()> {
+    let i18n = crate::i18n::load_languages()?;
+    crate::i18n::activate_correct_language(&i18n)?;
+
     let args = CLArgs::parse();
     let daemon_mode = is_daemon(&args);
     let mut old_status: Option<fti::ContainerDatesMap> = None;
@@ -69,12 +73,12 @@ fn main() -> Result<()> {
         // Check once and report the results if not running in daemon mode.
         let status = fti::fetch_recycling_station_status(args.station_id)?;
         if !daemon_mode {
-            report::notify_console(&status)?;
+            report::notify_console(i18n, &status)?;
             break;
         }
 
         // Send notifications if there are any messages
-        let messages = report::generate_message_strings(&status, old_status);
+        let messages = report::generate_message_strings(&i18n, &status, old_status);
         if !messages.is_empty() {
             println!("{} containers were emptied, notifying", messages.len());
 
